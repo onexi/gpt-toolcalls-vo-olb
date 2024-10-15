@@ -1,3 +1,7 @@
+// Add a .env file with OPENAI_API_KEY in the directory where this file is located and add the following lines:
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import bodyParser from 'body-parser';
 import { OpenAI} from 'openai';
