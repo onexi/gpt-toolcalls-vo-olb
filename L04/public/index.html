@@ -29,6 +29,7 @@
       async function get_data_from_elements() {
         for (let key in state) {
           if (document.getElementById(key) != null) {
+            // assistant_name, assistant_id, thread_id, user_message, run_id
             state[key] = document.getElementById(key).value;
           }
         }
@@ -226,50 +227,50 @@
                 Create Assistant with Name and Tools
               </button>
             </div>
-              <div class="col">
-                <input
-                  type="text"
-                  id="assistant_name"
-                  name="assistant_name"
-                  value="Test001"
-                />
-              </div>
+            <div class="col">
+              <input
+                type="text"
+                id="assistant_name"
+                name="assistant_name"
+                value="Test001"
+              />
+            </div>
             
-              <div class="col">
-                <input
-                  type="text"
-                  id="assistant_id"
-                  name="assistant_id"
-                  value="Assistant ID"
-                />
-              </div>
+            <div class="col">
+              <input
+                type="text"
+                id="assistant_id"
+                name="assistant_id"
+                value="Assistant ID"
+              />
             </div>
-            <div class="row mb-3">
-              <div class = "col">
-                <button
-                  class="btn btn-primary mr-1"
-                  type="submit"
-                  onclick="sendRequest('api/thread')"
-                >
-                  Create New Context Thread
-                </button>
-              </div>
-              <div class = "col">
-                 <input type="text" id="thread_id" name="thread_id" value="thread_id" />
-              </div>
-              <div class = "col">
-             </div>
-            </div>
-          </div>  
-         
-          
-          <div class = "row mb-3">
+          </div>
+          <div class="row mb-3">
             <div class = "col">
               <button
-              class="btn btn-primary mr-1"
-              type="submit"
-              onclick="sendRequest('api/prompt')"
-            >Input User Prompt</button>
+                class="btn btn-primary mr-1"
+                type="submit"
+                onclick="sendRequest('api/thread')"
+              >
+                Create New Context Thread
+              </button>
+            </div>
+            <div class = "col">
+                <input type="text" id="thread_id" name="thread_id" value="thread_id" />
+            </div>
+            <div class = "col">
+            </div>
+          </div>
+        </div>  
+         
+        <!-- Common buttons -->
+        <div class = "row mb-3">
+          <div class = "col">
+            <button
+            class="btn btn-primary mr-1"
+            type="submit"
+            onclick="sendRequest('api/prompt')"
+          >Input User Prompt</button>
           </div>
           <div class = "col">
             <input
@@ -280,32 +281,33 @@
             />
           </div>
           <div class = "col"></div> 
-          </div>  
-            <div class = "row mb-3">
-              <div class = "col">
-                <button
-                  class="btn btn-primary mr-1"
-                  type="submit"
-                  onclick="sendRequest('api/openai-call')"
-                >
-                  Run Agent
-                </button>
-              </div>
-              <div class = "col">
-                <input type="text" id="run_id" name="run_id" value="run_id" />
-              </div>
-              <div class = "col">
-              </div>
+        </div>  
+        <div class = "row mb-3">
+          <div class = "col">
+            <button
+              class="btn btn-primary mr-1"
+              type="submit"
+              onclick="sendRequest('api/openai-call')"
+            >
+              Run Agent
+            </button>
+          </div>
+          <div class = "col">
+            <input type="text" id="run_id" name="run_id" value="run_id" />
+          </div>
+          <div class = "col">
+          </div>
         </div>
 
+        <!-- Output windows-->
         <div class="container mt-5">
           <label for="response">Agent Context Window:</label>
           <div id="response" class="border p-3" style="height: 200px; overflow:auto;"></div>
-        <label for="response">JSON Output:</label>
-        <div id="json_output"class="border p-3" style="height: 200px; overflow:auto;"></div>
-        <label for="response">Functions:</label>
-        <div id="functions" class="border p-3" style="height: 200px; overflow:auto;"></div>
-      </div>
+          <label for="response">JSON Output:</label>
+          <div id="json_output"class="border p-3" style="height: 200px; overflow:auto;"></div>
+          <label for="response">Functions:</label>
+          <div id="functions" class="border p-3" style="height: 200px; overflow:auto;"></div>
+        </div>
     </div>
   </body>
   <script>

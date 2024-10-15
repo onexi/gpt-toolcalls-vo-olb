@@ -1,3 +1,7 @@
+// Add a .env file with OPENAI_API_KEY in the directory where this file is located and add the following lines:
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import bodyParser from 'body-parser';
 import { OpenAI} from 'openai';
@@ -95,33 +99,35 @@ app.post('/api/openai-call', async (req, res) => {
             messages: messages,
             tools: availableFunctions
         });
-       
-       // Extract the arguments for get_delivery_date
-// Note this code assumes we have already determined that the model generated a function call. See below for a more production ready example that shows how to check if the model generated a function call
-        const toolCall = response.choices[0].message.tool_calls[0];
 
-// Extract the arguments for get_delivery_date
-// Note this code assumes we have already determined that the model generated a function call. 
-        if (toolCall) {
+        // Extract the arguments for get_delivery_date
+        // Note this code assumes we have already determined that the model generated a function call. See below for a more production ready example that shows how to check if the model generated a function call
+        const message = response.choices[0].message;
+
+        // Extract the arguments for get_delivery_date
+        // Note this code assumes we have already determined that the model generated a function call. 
+        if (message.tool_calls) {
+            const toolCall = message.tool_calls[0];
             const functionName = toolCall.function.name;
             const parameters = JSON.parse(toolCall.function.arguments);
 
             const result = await functions[functionName].execute(...Object.values(parameters));
-// note that we need to respond with the function call result to the model quoting the tool_call_id
+            // note that we need to respond with the function call result to the model quoting the tool_call_id
             const function_call_result_message = {
                 role: "tool",
                 content: JSON.stringify({
                     result: result
                 }),
-                tool_call_id: response.choices[0].message.tool_calls[0].id
+                tool_call_id: toolCall.id
             };
             // add to the end of the messages array to send the function call result back to the model
-            messages.push(response.choices[0].message);
+            messages.push(message);
             messages.push(function_call_result_message);
             const completion_payload = {
                 model: "gpt-4o",
                 messages: messages,
             };
+            console.log(`completion_payload: ${JSON.stringify(completion_payload)}`);
             // Call the OpenAI API's chat completions endpoint to send the tool call result back to the model
             const final_response = await openai.chat.completions.create({
                 model: completion_payload.model,
@@ -133,13 +139,14 @@ app.post('/api/openai-call', async (req, res) => {
 
             res.json({ message:output, state: state });
         } else {
-            res.json({ message: 'No function call detected.' });
+            res.json({ message: 'No function call detected.', state: state });
         }
 
     } catch (error) {
         res.status(500).json({ error: 'OpenAI API failed', details: error.message });
     }
 });
+
 app.post('/api/prompt', async (req, res) => {
     // just update the state with the new prompt
     state = req.body;
