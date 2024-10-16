@@ -179,6 +179,9 @@
         console.log(`Updated state:: ${JSON.stringify(state)}`);
         console.log(`write to div: ${JSON.stringify(res.message)}`);
         write_to_div(route, res.message);
+        // display the array res.toolCall in the functions div
+        const functionsDiv = document.getElementById("functions");
+        functionsDiv.innerHTML = JSON.stringify(res.toolCall);
       }
     </script>
   </head>

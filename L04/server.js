@@ -87,7 +87,7 @@ app.post('/api/openai-call', async (req, res) => {
 
     const functions = await getFunctions();
     const availableFunctions = Object.values(functions).map(fn => fn.details);
-    console.log(`availableFunctions: ${JSON.stringify(availableFunctions)}`);
+    console.log(`availableFunctions: ${JSON.stringify(availableFunctions)}\n`);
     let messages = [
         { role: 'system', content: 'You are a helpful assistant.' },
         { role: 'user', content: user_message }
@@ -100,48 +100,49 @@ app.post('/api/openai-call', async (req, res) => {
             tools: availableFunctions
         });
 
-        // Extract the arguments for get_delivery_date
-        // Note this code assumes we have already determined that the model generated a function call. See below for a more production ready example that shows how to check if the model generated a function call
+        // Extract the function call result from the response
         const message = response.choices[0].message;
+        messages.push(message);
 
-        // Extract the arguments for get_delivery_date
-        // Note this code assumes we have already determined that the model generated a function call. 
-        if (message.tool_calls) {
-            const toolCall = message.tool_calls[0];
-            const functionName = toolCall.function.name;
-            const parameters = JSON.parse(toolCall.function.arguments);
+        // Execute the function call
+        let toolCallsResults = [];
+        if (message.tool_calls && message.tool_calls.length > 0) {
+            for (const toolCall of message.tool_calls) {
+                const functionName = toolCall.function.name;
+                const parameters = JSON.parse(toolCall.function.arguments);
 
-            const result = await functions[functionName].execute(...Object.values(parameters));
-            // note that we need to respond with the function call result to the model quoting the tool_call_id
-            const function_call_result_message = {
-                role: "tool",
-                content: JSON.stringify({
-                    result: result
-                }),
-                tool_call_id: toolCall.id
-            };
-            // add to the end of the messages array to send the function call result back to the model
-            messages.push(message);
-            messages.push(function_call_result_message);
+                const result = await functions[functionName].execute(...Object.values(parameters));
+                
+                const function_call_result_message = {
+                    role: "tool",
+                    content: JSON.stringify({
+                        result: result
+                    }),
+                    tool_call_id: toolCall.id
+                };
+                messages.push(function_call_result_message);
+                toolCallsResults.push({ toolCall: toolCall, result: result });
+            }
+
             const completion_payload = {
                 model: "gpt-4o",
                 messages: messages,
             };
-            console.log(`completion_payload: ${JSON.stringify(completion_payload)}`);
+            console.log(`completion_payload: ${JSON.stringify(completion_payload)}\n`);
             // Call the OpenAI API's chat completions endpoint to send the tool call result back to the model
             const final_response = await openai.chat.completions.create({
                 model: completion_payload.model,
                 messages: completion_payload.messages
             });
             // Extract the output from the final response
-            let output = final_response.choices[0].message.content 
+            let output = final_response.choices[0].message.content
 
-
-            res.json({ message:output, state: state });
+            var res_json = { message: output, state: state, toolCall: toolCallsResults };
         } else {
-            res.json({ message: 'No function call detected.', state: state });
+            var res_json = { message: message.content, state: state, toolCall: [] };
         }
-
+        res.json(res_json);
+        console.log(JSON.stringify(res_json, null, 2)+'\n');
     } catch (error) {
         res.status(500).json({ error: 'OpenAI API failed', details: error.message });
     }
@@ -161,5 +162,5 @@ app.post('/api/prompt', async (req, res) => {
 // Start the server
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}\n`);
 });
