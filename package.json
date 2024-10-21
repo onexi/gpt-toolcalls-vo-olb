@@ -4,9 +4,11 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "fs": "^0.0.1-security",
+    "leven": "^4.0.0",
     "openai": "^4.67.2",
     "path": "^0.12.7",
-    "purl": "^1.0.4"
+    "purl": "^1.0.4",
+    "word2vec": "^1.1.5"
   },
   "type": "module"
 }

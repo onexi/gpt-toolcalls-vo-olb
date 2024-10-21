@@ -89,24 +89,61 @@ app.post('/api/openai-call', async (req, res) => {
     const availableFunctions = Object.values(functions).map(fn => fn.details);
     console.log(`availableFunctions: ${JSON.stringify(availableFunctions)}\n`);
     let messages = [
-        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'system', content: 'You are a helpful assistant. You are able to call provided tools if needed, able to wisely call them step by step and properly reflect on what you have done and what needs doing at each stage if needed.' },
         { role: 'user', content: user_message }
     ];
     try {
         // Make OpenAI API call
-        const response = await openai.chat.completions.create({
+        var response = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages: messages,
             tools: availableFunctions
         });
 
         // Extract the function call result from the response
-        const message = response.choices[0].message;
-        messages.push(message);
+        var message = response.choices[0].message;
+        messages.push(message); // system, user, assistant
 
-        // Execute the function call
-        let toolCallsResults = [];
-        if (message.tool_calls && message.tool_calls.length > 0) {
+        let allToolCalls = [];
+
+        /*
+         1. Demo of one function, one turn, multiple calls
+            Prompt: Note down that Alice likes candy and that Bob likes chocolate.
+            Function:   [
+                            [
+                                scratchpad(action: 'set', key: 'Alice', memory: 'likes candy'), 
+                                scratchpad(action: 'set', key: 'Bob', memory: 'likes chocolate') 
+                            ]
+                        ]
+         2. Demo of one function, multiple turns
+            Prompt: Clear all memory.
+            Function:   [
+                            [
+                                scratchpad(action: 'getall')
+                            ],
+                            [
+                                scratchpad(action: 'delete', key: 'Alice'),
+                                scratchpad(action: 'delete', key: 'Bob')
+                            ]
+                        ]
+         3. Demo of multiple functions, multiple turns
+            Prompt: What was noted in your memory yesterday?
+            Function:   [
+                            [
+                                getTime()
+                            ],
+                            [
+                                scratchpad(action: 'getall')
+                            ]
+                        ]
+        */
+
+        // Keep pushing and fetching with LLM in turns if there are tool calls
+        let maxIter = 10;
+        while (message.tool_calls && message.tool_calls.length > 0 && maxIter > 0) {
+            maxIter--;
+            let toolCallsResults = [];
+            // Allow to call multiple tools in a turn
             for (const toolCall of message.tool_calls) {
                 const functionName = toolCall.function.name;
                 const parameters = JSON.parse(toolCall.function.arguments);
@@ -120,27 +157,22 @@ app.post('/api/openai-call', async (req, res) => {
                     }),
                     tool_call_id: toolCall.id
                 };
-                messages.push(function_call_result_message);
-                toolCallsResults.push({ toolCall: toolCall, result: result });
+                messages.push(function_call_result_message);// system, user, assistant, tool[...]
+                toolCallsResults.push({ functionName: functionName, parameters: parameters, result: result });
             }
-
-            const completion_payload = {
-                model: "gpt-4o",
-                messages: messages,
-            };
-            console.log(`completion_payload: ${JSON.stringify(completion_payload)}\n`);
+            allToolCalls.push(toolCallsResults);
+            
             // Call the OpenAI API's chat completions endpoint to send the tool call result back to the model
-            const final_response = await openai.chat.completions.create({
-                model: completion_payload.model,
-                messages: completion_payload.messages
+            response = await openai.chat.completions.create({
+                model: 'gpt-4o',
+                messages: messages,
+                tools: availableFunctions
             });
-            // Extract the output from the final response
-            let output = final_response.choices[0].message.content
-
-            var res_json = { message: output, state: state, toolCall: toolCallsResults };
-        } else {
-            var res_json = { message: message.content, state: state, toolCall: [] };
+            message = response.choices[0].message;
+            messages.push(message); // system, user, assistant, tool[...], assistant
         }
+
+        const res_json = { message: message.content, state: state, toolCall: allToolCalls };
         res.json(res_json);
         console.log(JSON.stringify(res_json, null, 2)+'\n');
     } catch (error) {
