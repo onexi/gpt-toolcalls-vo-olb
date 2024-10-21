@@ -127,7 +127,7 @@ app.post('/api/openai-call', async (req, res) => {
                             ]
                         ]
          3. Demo of multiple functions, multiple turns
-            Prompt: What was noted in your memory yesterday?
+            Prompt: What was noted in your memory within one hour before current time?
             Function:   [
                             [
                                 getTime()

@@ -74,11 +74,7 @@ const details = {
         "properties": {
             "action": {
                 "type": "string",
-                "description": "The action is one of 'set', 'get', 'getall' or 'delete'. Use \
-                                'set' to store a given memory for a given key, \
-                                'get' to retrieve a memory from a saved file for a given key, \
-                                'getall' to retrieve all memories from saved file, \
-                                'delete' to remove a memory from a saved file for a given key"
+                "description": "The action is one of 'set', 'get', 'getall' or 'delete'. Use 'set' to store a given memory for a given key, 'get' to retrieve a memory from a saved file for a given key, 'getall' to retrieve all memories from saved file, 'delete' to remove a memory from a saved file for a given key"
             },
             "key": {
                 "type": "string",
